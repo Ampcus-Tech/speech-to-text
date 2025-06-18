@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Registration System</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <h1><i class="fas fa-voice"></i> Voice Registration System</h1>
+        
+        <div class="model-selector">
+            <label for="service-select">Select Speech Recognition Service:</label>
+            <select id="service-select">
+                <option value="google">Google Speech Recognition</option>
+                <option value="whisper">Whisper (Offline + Auto-Language)</option>
+            </select>
+        </div>
+        
+        <div class="registration-form">
+            <h2><i class="fas fa-user-plus"></i> New Registration</h2>
+            
+            <div class="form-group">
+                <label for="name-field">Full Name:</label>
+                <div class="input-group">
+                    <input type="text" id="name-field" placeholder="Speak your full name">
+                    <button class="record-btn" data-field="candidate_name">
+                        <i class="fas fa-microphone"></i> Record
+                    </button>
+                </div>
+                <div class="transcript" id="name-transcript"></div>
+            </div>
+            
+            <div class="form-group">
+                <label for="exp-field">Years of Experience:</label>
+                <div class="input-group">
+                    <input type="text" id="exp-field" placeholder="Speak your years of experience">
+                    <button class="record-btn" data-field="years_of_experience">
+                        <i class="fas fa-microphone"></i> Record
+                    </button>
+                </div>
+                <div class="transcript" id="exp-transcript"></div>
+            </div>
+            
+            <div class="form-group">
+                <label for="designation-field">Current Designation:</label>
+                <div class="input-group">
+                    <input type="text" id="designation-field" placeholder="Speak your job title">
+                    <button class="record-btn" data-field="current_designation">
+                        <i class="fas fa-microphone"></i> Record
+                    </button>
+                </div>
+                <div class="transcript" id="designation-transcript"></div>
+            </div>
+            
+            <div class="form-group">
+                <label for="address-field">Address:</label>
+                <div class="input-group">
+                    <input type="text" id="address-field" placeholder="Speak your address">
+                    <button class="record-btn" data-field="address">
+                        <i class="fas fa-microphone"></i> Record
+                    </button>
+                </div>
+                <div class="transcript" id="address-transcript"></div>
+            </div>
+            
+            <div class="form-group">
+                <label for="email-field">Email:</label>
+                <div class="input-group">
+                    <input type="email" id="email-field" placeholder="Speak your email address">
+                    <button class="record-btn" data-field="email">
+                        <i class="fas fa-microphone"></i> Record
+                    </button>
+                </div>
+                <div class="transcript" id="email-transcript"></div>
+            </div>
+            
+            <div class="form-actions">
+                <button id="submit-btn">Submit Registration</button>
+                <button id="reset-btn">Reset Form</button>
+            </div>
+        </div>
+        
+        <div class="confirmation-modal" id="confirmation-modal">
+            <div class="modal-content">
+                <h3>Confirm Registration Details</h3>
+                <div class="confirmation-details">
+                    <p><strong>Name:</strong> <span id="confirm-name"></span></p>
+                    <p><strong>Experience:</strong> <span id="confirm-exp"></span> years</p>
+                    <p><strong>Designation:</strong> <span id="confirm-designation"></span></p>
+                    <p><strong>Address:</strong> <span id="confirm-address"></span></p>
+                    <p><strong>Email:</strong> <span id="confirm-email"></span></p>
+                </div>
+                <div class="modal-actions">
+                    <button id="confirm-btn">Confirm</button>
+                    <button id="edit-btn">Edit</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="records-section">
+            <h2><i class="fas fa-database"></i> Existing Records</h2>
+            <div class="actions">
+                <button id="toggle-records-btn">Show Records</button>
+                <div class="search-box">
+                    <input type="text" id="search-input" placeholder="Search records...">
+                    <button id="search-btn"><i class="fas fa-search"></i></button>
+                </div>
+            </div>
+            <div class="records-table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Exp (Yrs)</th>
+                            <th>Designation</th>
+                            <th>Address</th>
+                            <th>Email</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="records-body">
+                        <!-- Records will be populated here -->
+                    </tbody>
+                </table>
+                <div class="pagination" id="pagination">
+                    <button id="prev-page"><i class="fas fa-chevron-left"></i></button>
+                    <span id="page-info">Page 1 of 1</span>
+                    <button id="next-page"><i class="fas fa-chevron-right"></i></button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="edit-modal" id="edit-modal">
+            <div class="modal-content">
+                <h3>Edit Record</h3>
+                <form id="edit-form">
+                    <input type="hidden" id="edit-id">
+                    
+                    <div class="form-group">
+                        <label for="edit-name">Full Name:</label>
+                        <input type="text" id="edit-name" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit-exp">Years of Experience:</label>
+                        <input type="number" id="edit-exp" min="0" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit-designation">Designation:</label>
+                        <input type="text" id="edit-designation">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit-address">Address:</label>
+                        <input type="text" id="edit-address">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit-email">Email:</label>
+                        <input type="email" id="edit-email" required>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit">Save Changes</button>
+                        <button type="button" id="cancel-edit">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="status-bar" id="status-bar">
+            <i class="fas fa-info-circle"></i> <span id="status-text">Ready to record</span>
+        </div>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>
