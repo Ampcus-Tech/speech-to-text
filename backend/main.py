@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Query, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from services import google_service, whisper_service
+from services import google_service, whisper_service, vosk_service
 from database import create_record, get_all_records, update_record, get_record_by_id
 import re
 import logging
@@ -22,8 +22,8 @@ app.add_middleware(
 
 @app.post("/transcribe-field")
 async def transcribe_field(
-    service: str = Query(..., regex="^(google|whisper)$"),
-    field: str = Query(..., description="Field to transcribe: candidate_name, years_of_experience, current_designation, address, email")
+    service: str = Query(..., regex="^(google|whisper|vosk)$"),
+    field: str = Query(..., description="Field to transcribe: candidate_name, years_of_experience, current_designation, address, email"),language=None
 ):
     try:
         if service == "google":
@@ -31,10 +31,16 @@ async def transcribe_field(
             transcript = google_service.listen_and_transcribe()
             extracted = google_service.extract_single_field(transcript, field)
             return {"value": extracted, "transcript": transcript}
-        else:  # whisper
+        elif service == "whisper":
             logger.info(f"Transcribing {field} with Whisper")
             transcript, detected_lang = whisper_service.listen_and_transcribe()
             extracted = whisper_service.extract_single_field(transcript, field, detected_lang)
+            return {"value": extracted, "transcript": transcript}
+ 
+        elif service == "vosk":
+            logger.info(f"Transcribing {field} with Vosk (Language: {language})")
+            transcript, detected_lang = vosk_service.listen_and_transcribe(language=language)
+            extracted = vosk_service.extract_single_field(transcript, field, detected_lang)
             return {"value": extracted, "transcript": transcript}
     except Exception as e:
         logger.error(f"Error: {str(e)}")
@@ -88,4 +94,4 @@ def health_check():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8004)

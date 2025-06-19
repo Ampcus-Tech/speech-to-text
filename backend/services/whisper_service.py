@@ -1,3 +1,4 @@
+import re
 import whisper
 import numpy as np
 import sounddevice as sd
@@ -11,7 +12,7 @@ def load_model():
     global model
     if model is None:
         logger.info("Loading Whisper model...")
-        model = whisper.load_model("base")
+        model = whisper.load_model("small")
         logger.info("Whisper model loaded")
     return model
 
