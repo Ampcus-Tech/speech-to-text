@@ -12,7 +12,7 @@ def load_model():
     global model
     if model is None:
         logger.info("Loading Whisper model...")
-        model = whisper.load_model("small")
+        model = whisper.load_model("small") #larger models can be used like "base", "small", "medium", "large-v2"
         logger.info("Whisper model loaded")
     return model
 
@@ -46,6 +46,41 @@ def listen_and_transcribe(timeout=5, sample_rate=16000):
         logger.error(f"Transcription error: {e}")
         return "", "en"
 
+def clean_email(text):
+    if not text:
+        return ""
+
+    # Convert to lowercase and remove leading/trailing whitespace
+    text = text.lower().strip()
+    
+    # Replace email-related phrases with symbols
+    replacements = [
+        (r'\b(at the rate|at the symbol|at sign)\b', '@'),
+        (r'\bat\b', '@'),
+        (r'\b(dot|period|full stop|point)\b', '.'),
+        (r'\bunderscore\b', '_'),       
+        (r'\b(dash|hyphen)\b', '-'),
+        (r'\s+', ''),  # Remove all whitespace
+        (r'@+', '@'),  # Replace multiple @ with single @   
+              ]
+    
+    for pattern, replacement in replacements:
+        text = re.sub(pattern, replacement, text)
+    
+    # Remove all whitespace between words
+    text = re.sub(r'\s+', '', text)
+    
+    # Final validation - must contain @ and .
+    if '@' not in text or '.' not in text:
+        return text
+    
+    # Capitalize first letter if it's alphabetic
+    if text and text[0].isalpha():
+        text = text[0].upper() + text[1:]
+    
+    return text
+
+
 def extract_single_field(transcript, field, language='english'):
     if not transcript:
         return ""
@@ -55,43 +90,30 @@ def extract_single_field(transcript, field, language='english'):
             return transcript
         
         patterns = {
-            "candidate_name": [
-                r"(?:my name is|i am|name is|this is|i'm|im)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)",
-                r"^([A-Z][a-z]+\s+[A-Z][a-z]+)$",
-                r"([A-Z][a-z]+ [A-Z][a-z]+)"
-            ],
-            "years_of_experience": [
-                r"(\d+)\s*(?:years|yrs|year|y)",
-                r"experience of (\d+)\s*years",
-                r"(\d+)\s*\+?\s*years? exp",
-                r"(\d+)\s+yoe",
-                r"(\d+)\s+years of experience"
-            ],
-            "current_designation": [
-                r"(?:i am a|my designation is|i work as|i'm a|role is|as a)\s+([a-z ]+)",
-                r"^([a-z ]+)$"
-            ],
-            "address": [
-                r"(?:i live at|my address is|address is|located at|residing at)\s+([a-z0-9, ]+)",
-                r"^([a-z0-9, ]+)$"
-            ],
             "email": [
                 r"(?:my email is|email is|email|mail id|contact me at)\s+([\w\s@.]+)",
                 r"([\w\s.]+@[\w\s.]+)"
             ]
         }
         
-        for pattern in patterns.get(field, []):
-            match = re.search(pattern, transcript, re.IGNORECASE)
-            if match:
-                value = match.group(1).strip()
-                if field == "email":
-                    value = re.sub(r'\b(at|at the rate|at the symbol|at sign)\b', '@', value, flags=re.IGNORECASE)
-                    value = re.sub(r'\b(dot|period|full stop|point)\b', '.', value, flags=re.IGNORECASE)
-                    value = re.sub(r'\s+', '', value)
-                return value
+        if field == "email":
+            # First try to extract using patterns
+            for pattern in patterns.get(field, []):
+                match = re.search(pattern, transcript, re.IGNORECASE)
+                if match:
+                    extracted = match.group(1).strip()
+                    cleaned = clean_email(extracted)
+                    if '@' in cleaned and '.' in cleaned:
+                        return cleaned
+            
+            # If no pattern matched, try cleaning the entire transcript
+            cleaned = clean_email(transcript)
+            if '@' in cleaned and '.' in cleaned:
+                return cleaned
+            
+            return transcript
         
         return transcript
     except Exception as e:
-        logger.error(f"Regex error: {e}")
+        logger.error(f"Extraction error: {str(e)}")
         return transcript
