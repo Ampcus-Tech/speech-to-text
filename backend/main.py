@@ -5,7 +5,7 @@ from database import create_record, get_all_records, update_record, get_record_b
 import re
 import logging
 import os
-
+from typing import Optional
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -23,7 +23,8 @@ app.add_middleware(
 @app.post("/transcribe-field")
 async def transcribe_field(
     service: str = Query(..., regex="^(google|whisper|vosk)$"),
-    field: str = Query(..., description="Field to transcribe: candidate_name, years_of_experience, current_designation, address, email"),language=None
+    field: str = Query(..., description="Field to transcribe"),
+    language: Optional[str] = Query(None, description="Language code like 'en', 'hi', 'mr'")
 ):
     try:
         if service == "google":
@@ -32,11 +33,10 @@ async def transcribe_field(
             extracted = google_service.extract_single_field(transcript, field)
             return {"value": extracted, "transcript": transcript}
         elif service == "whisper":
-            logger.info(f"Transcribing {field} with Whisper")
-            transcript, detected_lang = whisper_service.listen_and_transcribe()
-            extracted = whisper_service.extract_single_field(transcript, field, detected_lang)
-            return {"value": extracted, "transcript": transcript}
- 
+           logger.info(f"Transcribing {field} with Whisper (Language: {language})")
+           transcript, detected_lang = whisper_service.listen_and_transcribe(language=language)
+           extracted = whisper_service.extract_single_field(transcript, field, detected_lang)
+           return {"value": extracted, "transcript": transcript}
         elif service == "vosk":
             logger.info(f"Transcribing {field} with Vosk (Language: {language})")
             transcript, detected_lang = vosk_service.listen_and_transcribe(language=language)
