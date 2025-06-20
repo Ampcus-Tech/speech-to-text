@@ -12,7 +12,7 @@ def load_model():
     global model
     if model is None:
         logger.info("Loading Whisper model...")
-        model = whisper.load_model("small")
+        model = whisper.load_model("small") #larger models can be used like "base", "small", "medium", "large-v2"
         logger.info("Whisper model loaded")
     return model
 
@@ -236,7 +236,7 @@ def extract_single_field(transcript, field, language='english'):
                  
         return transcript
     except Exception as e:
-        logger.error(f"Regex error: {e}")
+        logger.error(f"Extraction error: {str(e)}")
         return transcript
 
 # Example usage functions

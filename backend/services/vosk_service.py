@@ -1,15 +1,16 @@
 import os
 import json
 import logging
+import re
 from vosk import Model, KaldiRecognizer
 import pyaudio
- 
+
 logger = logging.getLogger(__name__)
- 
+
 # Load models for both languages
 model_en = None
 model_hi = None
- 
+
 def load_models():
     global model_en, model_hi
     if model_en is None:
@@ -25,7 +26,7 @@ def load_models():
         model_hi = Model(model_path_hi)
    
     return model_en, model_hi
- 
+
 def listen_and_transcribe(timeout=5, language='en'):
     try:
         model_en, model_hi = load_models()
@@ -60,19 +61,52 @@ def listen_and_transcribe(timeout=5, language='en'):
     except Exception as e:
         logger.error(f"Vosk transcription error: {e}")
         return "", language
- 
+
+def clean_email(text):
+    if not text:
+        return ""
+
+    # Convert to lowercase and remove leading/trailing whitespace
+    text = text.lower().strip()
+    
+    # Replace email-related phrases with symbols
+    replacements = [
+        (r'\b(at the rate|at the symbol|at sign)\b', '@'),
+        (r'\bat\b', '@'),
+        (r'\b(dot|period|full stop|point)\b', '.'),
+        (r'\bunderscore\b', '_'),       
+        (r'\b(dash|hyphen)\b', '-'),
+        (r'\s+', ''),  # Remove all whitespace
+        (r'@+', '@'),  # Replace multiple @ with single @   
+    ]
+    
+    for pattern, replacement in replacements:
+        text = re.sub(pattern, replacement, text)
+    
+    # Final validation - must contain @ and .
+    if '@' not in text or '.' not in text:
+        return text
+    
+    # Capitalize first letter if it's alphabetic
+    if text and text[0].isalpha():
+        text = text[0].upper() + text[1:]
+    
+    return text
+
 def extract_single_field(transcript, field, language='en'):
     if not transcript:
         return ""
    
     try:
         if language == 'hi':  # Hindi processing
-            # For Hindi, we'll just return the transcript as is for now
-            # You can add Hindi-specific patterns later
             return transcript
        
-        # English patterns (same as other services)
         patterns = {
+            "email": [
+                r"(?:my email is|email is|email|mail id|contact me at)\s+([\w\s@.]+)",
+                r"([\w\s.]+@[\w\s.]+)"
+            ],
+            # Keep other patterns unchanged
             "candidate_name": [
                 r"(?:my name is|i am|name is|this is|i'm|im)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)",
                 r"^([A-Z][a-z]+\s+[A-Z][a-z]+)$",
@@ -92,24 +126,33 @@ def extract_single_field(transcript, field, language='en'):
             "address": [
                 r"(?:i live at|my address is|address is|located at|residing at)\s+([a-z0-9, ]+)",
                 r"^([a-z0-9, ]+)$"
-            ],
-            "email": [
-                r"(?:my email is|email is|email|mail id|contact me at)\s+([\w\s@.]+)",
-                r"([\w\s.]+@[\w\s.]+)"
             ]
         }
        
+        if field == "email":
+            # First try to extract using patterns
+            for pattern in patterns.get(field, []):
+                match = re.search(pattern, transcript, re.IGNORECASE)
+                if match:
+                    extracted = match.group(1).strip()
+                    cleaned = clean_email(extracted)
+                    if '@' in cleaned and '.' in cleaned:
+                        return cleaned
+            
+            # If no pattern matched, try cleaning the entire transcript
+            cleaned = clean_email(transcript)
+            if '@' in cleaned and '.' in cleaned:
+                return cleaned
+            
+            return transcript
+        
+        # Handle other fields normally
         for pattern in patterns.get(field, []):
             match = re.search(pattern, transcript, re.IGNORECASE)
             if match:
-                value = match.group(1).strip()
-                if field == "email":
-                    value = re.sub(r'\b(at|at the rate|at the symbol|at sign)\b', '@', value, flags=re.IGNORECASE)
-                    value = re.sub(r'\b(dot|period|full stop|point)\b', '.', value, flags=re.IGNORECASE)
-                    value = re.sub(r'\s+', '', value)
-                return value
+                return match.group(1).strip()
        
         return transcript
     except Exception as e:
-        logger.error(f"Regex error: {e}")
+        logger.error(f"Extraction error: {e}")
         return transcript

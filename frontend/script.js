@@ -81,7 +81,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             try {
                 const response = await fetch(
-                    `http://localhost:8004/transcribe-field?service=${service}&field=${field}`, 
+                    `http://localhost:8000/transcribe-field?service=${service}&field=${field}`, 
                     { method: 'POST' }
                 );
                 
@@ -138,7 +138,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 email: emailField.value
             };
             
-            const response = await fetch('http://localhost:8004/create-record', {
+            const response = await fetch('http://localhost:8000/create-record', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(record)
@@ -193,7 +193,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updateStatus('Updating record...');
         
         try {
-            const response = await fetch(`http://localhost:8004/update-record/${recordId}`, {
+            const response = await fetch(`http://localhost:8000/update-record/${recordId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(recordData)
@@ -304,7 +304,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updateStatus('Loading records...');
         
         try {
-            const response = await fetch('http://localhost:8004/records');
+            const response = await fetch('http://localhost:8000/records');
             
             if (!response.ok) {
                 const errorData = await response.json();
@@ -384,7 +384,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateStatus(`Loading record ${recordId}...`);
                 
                 try {
-                    const response = await fetch(`http://localhost:8004/record/${recordId}`);
+                    const response = await fetch(`http://localhost:8000/record/${recordId}`);
                     
                     if (!response.ok) {
                         const errorData = await response.json();
@@ -493,7 +493,7 @@ function renderRecords() {
             updateStatus(`Saving record ${recordId}...`);
             
             try {
-                const response = await fetch(`http://localhost:8004/update-record/${recordId}`, {
+                const response = await fetch(`http://localhost:8000/update-record/${recordId}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(updateData)
@@ -523,7 +523,7 @@ function renderRecords() {
                 try {
                     // This would require a DELETE endpoint in backend
                     // For now, we'll use update to mark as deleted
-                    const response = await fetch(`http://localhost:8004/update-record/${recordId}`, {
+                    const response = await fetch(`http://localhost:8000/update-record/${recordId}`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ deleted: true })
